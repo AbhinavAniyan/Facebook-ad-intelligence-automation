@@ -1,0 +1,351 @@
+{
+  "name": "MySivi - Facebook Ad Intelligence",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -272
+      ],
+      "id": "9619bd40-49d6-4043-aaee-3acfb5984464",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "254ba45a-e37b-4483-9281-c12c651a242a",
+              "name": "Keyword",
+              "value": "Mysivi",
+              "type": "string"
+            },
+            {
+              "id": "b02de93e-5a45-4de9-a3a9-3486b1c31c88",
+              "name": "Country",
+              "value": "IN",
+              "type": "string"
+            },
+            {
+              "id": "b08aa3fd-2472-4e8a-b974-1965c10c4bfa",
+              "name": "Ad_limit",
+              "value": 5,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -400,
+        64
+      ],
+      "id": "8affa399-406e-47b3-951a-dc27a97a999c",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apidojo~facebook-ads-scraper/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"startUrls\": [\n    {\n      \"url\": \"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=IN&is_targeted_country=false&media_type=all&q=%22MySivi%22&search_type=keyword_exact_phrase&sort_data%5Bdirection%5D=desc&sort_data%5Bmode%5D=total_impressions\"\n    }\n  ],\n  \"resultsLimit\": 5,\n  \"activeStatus\": \"active\",\n  \"sorting\": \"total_impressions\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -176,
+        -240
+      ],
+      "id": "dddb01c0-196d-4da8-8450-d3c3135f632f",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "xwGxVq0vilJULFmR",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = $input.all();\n\nconst ads = incoming.flatMap(item =>\n  Array.isArray(item.json) ? item.json : [item.json]\n);\n\nreturn ads.map(ad => {\n  const snapshot = ad.snapshot || {};\n  const card = snapshot.cards?.[0] || {};\n\n  return {\n    json: {\n      ad_id: ad.ad_archive_id || \"\",\n      page_name: ad.page_name || \"\",\n      title: card.title || snapshot.title || \"\",\n      body: card.body || snapshot.body?.text || \"\",\n      hook: card.title || snapshot.title || \"\",\n      cta: card.cta_text || snapshot.cta_text || \"\",\n      video_url: card.video_hd_url || \"\",\n      ad_library_url: ad.ad_library_url || \"\"\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        112
+      ],
+      "id": "5377d90d-d70e-4eb0-b4a8-5a7a3f48107b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "models/gemini-3-flash-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert Facebook Ads Creative Analyst.\n\nAnalyse the following MySivi Facebook advertisement.\n\n**Ad Details:**\n- Page Name: {{ $json.page_name }}\n- Ad Title: {{ $json.title }}\n- Ad Body: {{ $json.body }}\n- Call to Action: {{ $json.cta }}\n\n**Your Tasks:**\n\n1. **Hook Analysis:** Identify the attention-grabbing hook. Explain why it may attract viewers.\n2. **Body Analysis:** Explain the main message and value proposition.\n3. **CTA Analysis:** Identify the CTA and evaluate whether it is clear and compelling.\n4. **Target Audience:** Identify the likely target audience.\n5. **Strengths:** List the strongest elements of this advertisement.\n6. **Weaknesses:** Identify what could be improved.\n7. **Hook Score:** Give a score from 1–10.\n8. **Body Score:** Give a score from 1–10.\n9. **CTA Score:** Give a score from 1–10.\n10. **Overall Creative Score:** Give a score from 1–10.\n\n**Final Recommendation:**\nSuggest specific improvements to make this advertisement more engaging and effective.\n\n**Important Rules:**\n- Analyse only the supplied information.\n- Do not invent facts.\n- Do not assume actual conversions, revenue, ROAS or campaign performance.\n- Scores must be based on creative quality, clarity and persuasive strength.\n- Keep the analysis structured, clear and professional."
+            }
+          ]
+        },
+        "jsonOutput": "={{ false }}",
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        96,
+        -240
+      ],
+      "id": "c17c4a30-4101-4c71-95e5-ad5edfdfe492",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "zER7a4GQjn8kJXz7",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst items = $input.all();\n\nconst results = items.map((item, index) => {\n\n  // Gemini AI analysis extract cheyyunnu\n  const analysis = item.json.content?.parts\n    ?.map(part => part.text || \"\")\n    .join(\"\\n\") || \"\";\n\n  // Overall score kandupidikkunnu\n  const match = analysis.match(\n    /Overall\\s+Creative\\s+Score\\s*[:\\-]\\s*(\\d+(?:\\.\\d+)?)\\s*\\/\\s*10/i\n  );\n\n  const score = match ? Number(match[1]) : 0;\n\n  return {\n    json: {\n      ad_id: item.json.ad_id || \"\",\n      page_name: item.json.page_name || \"\",\n      title: item.json.title || \"\",\n      hook: item.json.hook || item.json.title || \"\",\n      body: item.json.body || \"\",\n      cta: item.json.cta || \"\",\n      video_url: item.json.video_url || \"\",\n      ad_library_url: item.json.ad_library_url || \"\",\n      ad_number: index + 1,\n      overall_score: score,\n      analysis: analysis\n    }\n  };\n});\n\n// Highest score first\nresults.sort(\n  (a, b) => b.json.overall_score - a.json.overall_score\n);\n\n// Rank assign cheyyunnu\nreturn results.map((item, index) => ({\n  json: {\n    rank: index + 1,\n    ...item.json\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        144
+      ],
+      "id": "ba3c8a3a-2255-4039-b1b5-0ef9ad3e5b0d",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        544,
+        -224
+      ],
+      "id": "c76f5267-0b29-4178-a953-2d3488657c88",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst items = $input.all();\n\n// All five ranked ads\nconst ads = items.map(item => ({\n  rank: item.json.rank,\n  ad_id: item.json.ad_id,\n  page_name: item.json.page_name,\n  title: item.json.title,\n  hook: item.json.hook,\n  body: item.json.body,\n  cta: item.json.cta,\n  ad_library_url: item.json.ad_library_url,\n  overall_score: item.json.overall_score,\n  analysis: item.json.analysis\n}));\n\n// Highest ranked ad\nconst bestAd = ads[0];\n\nreturn [{\n  json: {\n    report_title: \"MySivi Facebook Ads Intelligence Report\",\n    total_ads_analysed: ads.length,\n    best_ad: bestAd,\n    all_ads: ads,\n    important_note: \"Scores represent AI-based creative quality analysis, not actual conversions or ROAS. Video content was not analysed.\"\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        16
+      ],
+      "id": "7dbfa2d1-1016-41fb-9178-0e1e299b64f2",
+      "name": "Generate Report Data"
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n<title>MySivi Facebook Ads Intelligence Report</title>\n<style>\nbody {\n  font-family: Arial, sans-serif;\n  color: #222;\n  padding: 30px;\n  line-height: 1.5;\n}\nh1 { color: #17365D; }\nh2 { color: #24527A; border-bottom: 1px solid #ddd; padding-bottom: 8px; }\n.summary {\n  background: #eef4fb;\n  padding: 15px;\n  border-radius: 8px;\n}\ntable {\n  width: 100%;\n  border-collapse: collapse;\n  margin-top: 15px;\n}\nth, td {\n  border: 1px solid #ddd;\n  padding: 10px;\n  text-align: left;\n  vertical-align: top;\n}\nth { background: #17365D; color: white; }\npre {\n  white-space: pre-wrap;\n  font-family: Arial, sans-serif;\n  font-size: 12px;\n}\n.note { color: #8a4b08; font-size: 12px; }\n</style>\n</head>\n<body>\n\n<h1>{{ $json.report_title }}</h1>\n<p>Facebook Ad Library Analysis | MySivi | India</p>\n\n<div class=\"summary\">\n<h2>Executive Summary</h2>\n<p><b>Total Ads Analysed:</b> {{ $json.total_ads_analysed }}</p>\n<h3>Best Ranked Ad</h3>\n<p><b>Page:</b> {{ $json.best_ad.page_name }}</p>\n<p><b>Ad ID:</b> {{ $json.best_ad.ad_id }}</p>\n<p><b>Hook:</b> {{ $json.best_ad.hook }}</p>\n<p><b>Overall Creative Score:</b> {{ $json.best_ad.overall_score }}/10</p>\n<p><b>CTA:</b> {{ $json.best_ad.cta }}</p>\n</div>\n\n<h2>Ad Ranking</h2>\n<table>\n<tr>\n<th>Rank</th>\n<th>Ad ID</th>\n<th>Hook</th>\n<th>CTA</th>\n<th>Score</th>\n</tr>\n{{ $json.all_ads.map(ad => '<tr><td>' + ad.rank + '</td><td>' + ad.ad_id + '</td><td>' + ad.hook + '</td><td>' + ad.cta + '</td><td>' + ad.overall_score + '/10</td></tr>').join('') }}\n</table>\n\n<h2>Detailed Ad Analysis</h2>\n{{ $json.all_ads.map(ad => '<h3>Rank ' + ad.rank + ' – ' + ad.page_name + '</h3><p><b>Ad ID:</b> ' + ad.ad_id + '</p><p><b>Body:</b> ' + ad.body + '</p><p><b>Score:</b> ' + ad.overall_score + '/10</p><pre>' + (ad.analysis || '') + '</pre><hr>').join('') }}\n\n<h2>Important Limitations</h2>\n<p class=\"note\">{{ $json.important_note }}</p>\n\n<p>Report generated using n8n, Apify and Google Gemini.</p>\n</body>\n</html>"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1008,
+        16
+      ],
+      "id": "f376a59b-ee25-4687-b414-6b78c98deeeb",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/forms/chromium/convert/html",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1456,
+        16
+      ],
+      "id": "551eba7e-400d-4d97-8363-d6febbffc4f2",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "html",
+        "options": {
+          "fileName": "index.html"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.2,
+      "position": [
+        1232,
+        16
+      ],
+      "id": "cf8c2625-d100-43dd-8a08-b74da327289d",
+      "name": "index.html"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Generate Report Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Report Data": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "index.html",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "index.html": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6e691055-2a5d-4102-a014-df8921744e05",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "21a4f41c95a80845569d93d6a38c5904804e93e6c5af3210d1381c48cf66b185"
+  },
+  "nodeGroups": [],
+  "id": "OQsWe4C5IYZBFgjp",
+  "tags": []
+}
