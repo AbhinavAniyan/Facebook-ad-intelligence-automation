@@ -1,0 +1,483 @@
+{
+  "name": "MySivi Ai Facebook Ad Intelligence",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1168,
+        -752
+      ],
+      "id": "9619bd40-49d6-4043-aaee-3acfb5984464",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "254ba45a-e37b-4483-9281-c12c651a242a",
+              "name": "Keyword",
+              "value": "Mysivi",
+              "type": "string"
+            },
+            {
+              "id": "b02de93e-5a45-4de9-a3a9-3486b1c31c88",
+              "name": "Country",
+              "value": "IN",
+              "type": "string"
+            },
+            {
+              "id": "b08aa3fd-2472-4e8a-b974-1965c10c4bfa",
+              "name": "Ad_limit",
+              "value": 5,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -768,
+        -752
+      ],
+      "id": "8affa399-406e-47b3-951a-dc27a97a999c",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "https://api.apify.com/v2/datasets/Xx3dX6Ewv5jmOSc2q/items?format=json&clean=true",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -224,
+        -752
+      ],
+      "id": "dddb01c0-196d-4da8-8450-d3c3135f632f",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "xwGxVq0vilJULFmR",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": false
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        512,
+        -352
+      ],
+      "id": "c76f5267-0b29-4178-a953-2d3488657c88",
+      "name": "Merge",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst items = $input.all();\n\nconst ads = items.map(item => {\n  const ad = item.json;\n\n  return {\n    rank: ad.rank,\n    ad_id: ad.ad_id,\n    page_name: ad.page_name,\n    title: ad.title,\n    hook: ad.hook,\n    body: ad.body,\n    cta: ad.cta,\n    video_url: ad.video_url,\n    ad_library_url: ad.ad_library_url,\n\n    // Text analysis\n    overall_score: ad.overall_score,\n    hook_score: ad.hook_score,\n    body_score: ad.body_score,\n    cta_score: ad.cta_score,\n    hook_analysis: ad.hook_analysis,\n    body_analysis: ad.body_analysis,\n    cta_analysis: ad.cta_analysis,\n    target_audience: ad.target_audience,\n    strengths: ad.strengths || [],\n    weaknesses: ad.weaknesses || [],\n    final_recommendation: ad.final_recommendation,\n\n    // Video analysis\n    video_hook: ad.video_hook,\n    first_3_seconds_visual: ad.first_3_seconds_visual,\n    transcript: ad.transcript,\n    on_screen_text: ad.on_screen_text || [],\n    spoken_cta: ad.spoken_cta,\n    creative_summary: ad.creative_summary,\n    video_confidence: ad.video_confidence\n  };\n});\n\nconst bestAd = ads[0] || {};\n\nreturn [{\n  json: {\n    report_title: \"MySivi Facebook Ads Intelligence Report\",\n    total_ads_analysed: ads.length,\n    best_ad: bestAd,\n    all_ads: ads,\n    important_note:\n      \"Scores represent AI-based creative quality analysis, not actual conversions or ROAS. Both ad text and video content were analysed using AI.\"\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -944
+      ],
+      "id": "7dbfa2d1-1016-41fb-9178-0e1e299b64f2",
+      "name": "Generate Report Data"
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>MySivi | Facebook Ads Analysis Report</title>\n\n  <style>\n    @page { size: A4; margin: 14mm 12mm; }\n\n    :root {\n      --navy: #17365D;\n      --navy-dark: #0E2342;\n      --teal: #1F8A8A;\n      --gold: #C9A24B;\n      --ink: #263238;\n      --muted: #6B7785;\n      --line: #DDE4EC;\n      --tint: #F3F6FA;\n    }\n\n    * { box-sizing: border-box; }\n\n    html { background: #fff; }\n\n    body {\n      font-family: \"Segoe UI\", \"Helvetica Neue\", Arial, sans-serif;\n      color: var(--ink);\n      line-height: 1.6;\n      font-size: 14px;\n      max-width: 1100px;\n      margin: auto;\n      padding: 30px;\n      -webkit-print-color-adjust: exact;\n      print-color-adjust: exact;\n    }\n\n    p { margin: 6px 0; orphans: 3; widows: 3; }\n\n    /* ---------- Cover header ---------- */\n    .cover {\n      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 65%, #24527A 100%);\n      color: #fff;\n      border-radius: 14px;\n      padding: 34px 38px;\n      border-bottom: 5px solid var(--gold);\n    }\n    .cover h1 {\n      color: #fff;\n      font-size: 30px;\n      line-height: 1.25;\n      margin: 0 0 10px;\n      border: 0;\n      padding: 0;\n      letter-spacing: 0.2px;\n    }\n    .cover p { color: #C9D6E6; font-size: 14px; margin: 0; }\n\n    h1, h2, h3 { color: var(--navy); }\n\n    h2 {\n      font-size: 21px;\n      margin: 36px 0 14px;\n      padding-left: 12px;\n      border-left: 5px solid var(--gold);\n      line-height: 1.2;\n      break-after: avoid;\n      page-break-after: avoid;\n    }\n\n    h3 {\n      font-size: 16px;\n      margin: 0 0 8px;\n      break-after: avoid;\n      page-break-after: avoid;\n    }\n\n    /* ---------- Executive summary ---------- */\n    .summary {\n      background: #fff;\n      border: 1px solid var(--line);\n      border-top: 4px solid var(--teal);\n      border-radius: 12px;\n      padding: 8px 26px 22px;\n      margin: 26px 0;\n    }\n    .summary h2 { margin-top: 18px; }\n    .summary h3 { color: var(--teal); margin-top: 18px; }\n\n    .summary-total {\n      display: inline-block;\n      background: var(--tint);\n      border-radius: 8px;\n      padding: 8px 16px;\n    }\n\n    .score {\n      display: inline-block;\n      font-size: 18px;\n      font-weight: 700;\n      color: #fff;\n      background: var(--navy);\n      border-radius: 999px;\n      padding: 5px 18px;\n      margin: 10px 0;\n      break-inside: avoid;\n      page-break-inside: avoid;\n    }\n\n    .summary a, .ad-card a {\n      display: inline-block;\n      margin-top: 8px;\n      color: #fff;\n      background: var(--teal);\n      text-decoration: none;\n      font-weight: 600;\n      font-size: 13px;\n      padding: 7px 16px;\n      border-radius: 6px;\n    }\n\n    /* ---------- Ranking table ---------- */\n    table {\n      width: 100%;\n      border-collapse: collapse;\n      margin-top: 12px;\n      border: 1px solid var(--line);\n    }\n    th, td {\n      padding: 11px 12px;\n      text-align: left;\n      vertical-align: top;\n      word-break: break-word;\n      border: 1px solid var(--line);\n    }\n    th {\n      background: var(--navy);\n      color: #fff;\n      font-size: 13px;\n      font-weight: 600;\n      border-color: var(--navy);\n    }\n    tr { break-inside: avoid; page-break-inside: avoid; }\n    tr:nth-child(even) td { background: var(--tint); }\n    td:first-child { font-weight: 700; color: var(--navy); width: 54px; }\n\n    /* ---------- Ad cards ---------- */\n    .ad-card {\n      background: #fff;\n      border: 1px solid var(--line);\n      border-left: 6px solid var(--navy);\n      border-radius: 12px;\n      padding: 22px 26px;\n      margin: 24px 0;\n    }\n    .ad-card > h3 {\n      font-size: 19px;\n      padding-bottom: 10px;\n      margin-bottom: 14px;\n      border-bottom: 2px solid var(--line);\n    }\n    .ad-card p { word-break: break-word; }\n\n    .ad-card h3:not(:first-child) {\n      margin-top: 22px;\n      padding: 7px 12px;\n      background: var(--tint);\n      border-radius: 6px;\n      font-size: 15px;\n    }\n\n    .ad-card .score { margin: 14px 0 6px; }\n\n    .ad-card ul, .video-section ul { margin: 4px 0 10px; padding-left: 20px; }\n    .ad-card li { margin-bottom: 4px; break-inside: avoid; page-break-inside: avoid; }\n\n    .section-label { font-weight: 700; color: var(--navy); }\n\n    /* ---------- Video analysis ---------- */\n    .video-section {\n      background: var(--tint);\n      border: 1px solid var(--line);\n      border-top: 4px solid var(--gold);\n      border-radius: 10px;\n      padding: 16px 20px;\n      margin: 20px 0;\n    }\n    .video-section h3 { background: transparent !important; padding: 0 !important; margin-top: 0 !important; }\n\n    /* ---------- Footer ---------- */\n    .note {\n      background: #FFF8E7;\n      border-left: 5px solid var(--gold);\n      border-radius: 6px;\n      padding: 12px 16px;\n      color: #795548;\n      font-size: 13px;\n    }\n\n    .footer {\n      margin-top: 30px;\n      padding-top: 12px;\n      border-top: 2px solid var(--line);\n      text-align: center;\n      color: var(--muted);\n      font-size: 12px;\n    }\n\n    a { color: #24527A; }\n\n    @media print {\n      body { padding: 0; max-width: none; margin: 0; }\n    }\n  </style>\n</head>\n\n<body>\n\n  <div class=\"cover\">\n    <h1>{{ $json.report_title }}</h1>\n    <p>Facebook Ad Library Analysis | MySivi | India</p>\n  </div>\n\n  <div class=\"summary\">\n    <h2>Executive Summary</h2>\n    <p class=\"summary-total\"><strong>Total Ads Analysed:</strong> {{ $json.total_ads_analysed }}</p>\n\n    <h3>Best Creative – Rank 1</h3>\n    <p><strong>Page:</strong> {{ $json.best_ad.page_name }}</p>\n    <p><strong>Ad ID:</strong> {{ $json.best_ad.ad_id }}</p>\n    <p><strong>Hook:</strong> {{ $json.best_ad.hook }}</p>\n    <p><strong>CTA:</strong> {{ $json.best_ad.cta }}</p>\n    <p class=\"score\">Creative Score: {{ $json.best_ad.overall_score }}/10</p>\n\n    <p><strong>Video Hook:</strong> {{ $json.best_ad.video_hook }}</p>\n    <p><strong>Opening Visual:</strong> {{ $json.best_ad.first_3_seconds_visual }}</p>\n\n    <a href=\"{{ $json.best_ad.ad_library_url }}\">View Ad in Facebook Ad Library</a>\n  </div>\n\n  <h2>Ad Ranking</h2>\n\n  <table>\n    <tr>\n      <th>Rank</th>\n      <th>Ad ID</th>\n      <th>Hook</th>\n      <th>CTA</th>\n      <th>Score</th>\n    </tr>\n\n    {{ $json.all_ads.map(ad => '<tr><td>' + ad.rank + '</td><td>' + ad.ad_id + '</td><td>' + ad.hook + '</td><td>' + ad.cta + '</td><td><strong>' + ad.overall_score + '/10</strong></td></tr>').join('') }}\n  </table>\n\n  <h2>Detailed Ad Analysis</h2>\n\n  {{ $json.all_ads.map(ad => `\n    <div class=\"ad-card\">\n      <h3>Rank ${ad.rank} – ${ad.page_name}</h3>\n\n      <p><strong>Ad ID:</strong> ${ad.ad_id}</p>\n      <p><strong>Title:</strong> ${ad.title}</p>\n      <p><strong>Hook:</strong> ${ad.hook}</p>\n      <p><strong>Body:</strong> ${ad.body}</p>\n      <p><strong>CTA:</strong> ${ad.cta}</p>\n\n      <p class=\"score\">Overall Score: ${ad.overall_score}/10</p>\n\n      <h3>Text Analysis</h3>\n      <p><strong>Hook Score:</strong> ${ad.hook_score}/10</p>\n      <p><strong>Hook Analysis:</strong> ${ad.hook_analysis || 'Not available'}</p>\n\n      <p><strong>Body Score:</strong> ${ad.body_score}/10</p>\n      <p><strong>Body Analysis:</strong> ${ad.body_analysis || 'Not available'}</p>\n\n      <p><strong>CTA Score:</strong> ${ad.cta_score}/10</p>\n      <p><strong>CTA Analysis:</strong> ${ad.cta_analysis || 'Not available'}</p>\n\n      <p><strong>Target Audience:</strong> ${ad.target_audience || 'Not available'}</p>\n\n      <p><strong style=\"color:#2E7D5B;\">Strengths</strong></p>\n      <ul>${(ad.strengths || []).map(item => '<li>' + item + '</li>').join('')}</ul>\n\n      <p><strong style=\"color:#B5483A;\">Weaknesses</strong></p>\n      <ul>${(ad.weaknesses || []).map(item => '<li>' + item + '</li>').join('')}</ul>\n\n      <p><strong>Recommendation:</strong> ${ad.final_recommendation || 'Not available'}</p>\n\n      <div class=\"video-section\">\n        <h3>Video Analysis</h3>\n\n        <p><strong>Video Hook:</strong> ${ad.video_hook || 'Not available'}</p>\n\n        <p><strong>First 3 Seconds Visual:</strong>\n          ${ad.first_3_seconds_visual || 'Not available'}\n        </p>\n\n        <p><strong>Transcript:</strong></p>\n        <p>${ad.transcript || 'Not available'}</p>\n\n        <p><strong>On-Screen Text:</strong></p>\n        <ul>\n          ${(ad.on_screen_text || []).map(item => '<li>' + item + '</li>').join('')}\n        </ul>\n\n        <p><strong>Spoken CTA:</strong>\n          ${ad.spoken_cta || 'Not available'}\n        </p>\n\n        <p><strong>Creative Summary:</strong>\n          ${ad.creative_summary || 'Not available'}\n        </p>\n\n        <p><strong>Video Analysis Confidence:</strong>\n          ${ad.video_confidence || 'Not available'}\n        </p>\n      </div>\n\n      <p><strong>Video:</strong>\n        ${ad.video_url ? '<a href=\"' + ad.video_url + '\">Watch Ad Video</a>' : 'Not available'}\n      </p>\n\n      <a href=\"${ad.ad_library_url}\">View Facebook Ad</a>\n    </div>\n  `).join('') }}\n\n  <h2>Important Limitations</h2>\n  <p class=\"note\">{{ $json.important_note }}</p>\n\n  <p class=\"footer\">Generated using n8n, Apify and Google Gemini.</p>\n\n</body>\n</html>"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1536,
+        -944
+      ],
+      "id": "f376a59b-ee25-4687-b414-6b78c98deeeb",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/forms/chromium/convert/html",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1776,
+        -320
+      ],
+      "id": "551eba7e-400d-4d97-8363-d6febbffc4f2",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "html",
+        "options": {
+          "fileName": "index.html"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.2,
+      "position": [
+        1648,
+        -640
+      ],
+      "id": "cf8c2625-d100-43dd-8a08-b74da327289d",
+      "name": "index.html"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.video_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -464,
+        -944
+      ],
+      "id": "e6f0bae2-988c-4a90-8b8a-c7e70622b10d",
+      "name": "HTTP Request2",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.5-flash-lite",
+          "mode": "list",
+          "cachedResultName": "Gemini 3.5 Flash Lite"
+        },
+        "text": "Analyze the uploaded video ad.\n\nExtract:\n1. First 3-second hook (visual, spoken words, and on-screen text)\n2. Full spoken transcript\n3. All on-screen text\n4. Spoken call-to-action\n5. Main message and creative summary\n\nReturn ONLY valid JSON:\n\n{\n  \"video_hook\": \"\",\n  \"first_3_seconds_visual\": \"\",\n  \"transcript\": \"\",\n  \"on_screen_text\": [],\n  \"spoken_cta\": \"\",\n  \"creative_summary\": \"\",\n  \"confidence\": \"\"\n}",
+        "videoUrls": "={{ $('Extract Ads Data').item.json.video_url }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        96,
+        -944
+      ],
+      "id": "80350c53-da34-4e75-8859-bddb5f6aaecd",
+      "name": "Analyze video",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "X1568x2vzlS7b0TT",
+          "name": "Google Gemini(PaLM) Api account 8"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst incoming = $input.all().filter(item =>\n  item.json && item.json.ad_archive_id\n);\n\nconst ads = incoming.flatMap(item =>\n  Array.isArray(item.json) ? item.json : [item.json]\n);\n\nreturn ads.map(ad => {\n  const snapshot = ad.snapshot || {};\n  const cards = snapshot.cards || [];\n  const card = cards[0] || {};\n\n  const videoUrls = cards\n    .map(c => c.video_hd_url || c.video_sd_url || \"\")\n    .filter(url => url !== \"\");\n\n  const videoUrl =\n    card.video_hd_url ||\n    card.video_sd_url ||\n    \"\";\n\n  return {\n    json: {\n      ad_id: ad.ad_archive_id || \"\",\n      page_name: ad.page_name || \"\",\n      title: card.title || snapshot.title || \"\",\n      body: card.body || snapshot.body?.text || \"\",\n      hook: card.title || snapshot.title || \"\",\n      cta: card.cta_text || snapshot.cta_text || \"\",\n      video_url: videoUrl,\n      video_urls: videoUrls,\n      has_video: videoUrls.length > 0,\n      ad_library_url: ad.ad_library_url || \"\"\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        -752
+      ],
+      "id": "5377d90d-d70e-4eb0-b4a8-5a7a3f48107b",
+      "name": "Extract Ads Data"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.5-flash-lite",
+          "mode": "list",
+          "cachedResultName": "Gemini 3.5 Flash Lite"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert Facebook Ads Creative Analyst.\n\nAnalyse the following MySivi Facebook advertisement.\n\n**Ad Details:**\n- Page Name: {{ $json.page_name }}\n- Ad Title: {{ $json.title }}\n- Ad Body: {{ $json.body }}\n- Call to Action: {{ $json.cta }}\n\n**Your Tasks:**\n\n1. **Hook Analysis:** Identify the attention-grabbing hook. Explain why it may attract viewers.\n2. **Body Analysis:** Explain the main message and value proposition.\n3. **CTA Analysis:** Identify the CTA and evaluate whether it is clear and compelling.\n4. **Target Audience:** Identify the likely target audience based only on the supplied information.\n5. **Strengths:** List the strongest elements of this advertisement.\n6. **Weaknesses:** Identify what could be improved.\n7. **Hook Score:** Give a score from 1–10.\n8. **Body Score:** Give a score from 1–10.\n9. **CTA Score:** Give a score from 1–10.\n10. **Overall Creative Score:** Give a score from 1–10.\n\n**Final Recommendation:**\nSuggest specific improvements to make this advertisement more engaging and effective.\n\n**Important Rules:**\n- Analyse only the supplied information.\n- Do not invent facts or assume information that is not provided.\n- Do not assume actual conversions, revenue, ROAS or campaign performance.\n- Scores must be based on creative quality, clarity and persuasive strength.\n- If any information is missing, clearly mention it instead of guessing.\n- Keep the analysis structured, clear and professional.\n- Overall Creative Score must reflect the quality of the complete creative, not campaign performance.\n\n**Output Format:**\n\nReturn ONLY valid JSON. Do not include Markdown code fences or additional text.\n\n{\n  \"hook_analysis\": \"Detailed analysis\",\n  \"body_analysis\": \"Detailed analysis\",\n  \"cta_analysis\": \"Detailed analysis\",\n  \"target_audience\": \"Likely target audience\",\n  \"strengths\": [\"Strength 1\", \"Strength 2\"],\n  \"weaknesses\": [\"Weakness 1\", \"Weakness 2\"],\n  \"hook_score\": 0,\n  \"body_score\": 0,\n  \"cta_score\": 0,\n  \"overall_creative_score\": 0,\n  \"final_recommendation\": \"Specific improvement suggestions\"\n}\n\nAll four scores must be numeric values between 1 and 10."
+            }
+          ]
+        },
+        "jsonOutput": "={{ false }}",
+        "builtInTools": {},
+        "options": {
+          "includeMergedResponse": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -464,
+        -368
+      ],
+      "id": "c17c4a30-4101-4c71-95e5-ad5edfdfe492",
+      "name": "Gemini Text Analysis",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "X1568x2vzlS7b0TT",
+          "name": "Google Gemini(PaLM) Api account 8"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst originalAds = $(\"Extract Ads Data\").all();\n\nfunction parseJSON(raw, label, index) {\n  // If the raw text is empty, null, or undefined, return an empty object instead of crashing\n  if (!raw || typeof raw !== \"string\" || raw.trim() === \"\") {\n    console.warn(`${label} missing or empty at item ${index + 1}, using fallback.`);\n    return {};\n  }\n\n  const cleaned = raw\n    .replace(/```json/gi, \"\")\n    .replace(/```/g, \"\")\n    .trim();\n\n  // If after cleaning it's empty, return an empty object\n  if (cleaned === \"\") {\n    return {};\n  }\n\n  try {\n    return JSON.parse(cleaned);\n  } catch (error) {\n    console.error(`Failed to parse JSON for ${label} at item ${index + 1}:`, error);\n    return {}; // Fallback to an empty object if JSON is malformed\n  }\n}\n\nconst results = items.map((item, index) => {\n  const data = item.json;\n  const ad = originalAds[index]?.json || {};\n\n  const text = parseJSON(data.text_analysis_raw, \"Text Analysis\", index);\n  const video = parseJSON(data.video_analysis_raw || data.content?.parts?.[0]?.text, \"Video Analysis\", index);\n\n  return {\n    json: {\n      ad_id: ad.ad_id || \"\",\n      page_name: ad.page_name || \"\",\n      title: ad.title || \"\",\n      hook: ad.hook || ad.title || \"\",\n      body: ad.body || \"\",\n      cta: ad.cta || \"\",\n      video_url: ad.video_url || \"\",\n      ad_library_url: ad.ad_library_url || \"\",\n      ad_number: index + 1,\n\n      overall_score: Number(text.overall_creative_score || 0),\n      hook_score: Number(text.hook_score || 0),\n      body_score: Number(text.body_score || 0),\n      cta_score: Number(text.cta_score || 0),\n\n      hook_analysis: text.hook_analysis || \"\",\n      body_analysis: text.body_analysis || \"\",\n      cta_analysis: text.cta_analysis || \"\",\n      target_audience: text.target_audience || \"\",\n      strengths: text.strengths || [],\n      weaknesses: text.weaknesses || [],\n      final_recommendation: text.final_recommendation || \"\",\n\n      video_hook: video.video_hook || \"\",\n      first_3_seconds_visual: video.first_3_seconds_visual || \"\",\n      transcript: video.transcript || \"\",\n      on_screen_text: video.on_screen_text || [],\n      spoken_cta: video.spoken_cta || \"\",\n      creative_summary: video.creative_summary || \"\",\n      video_confidence: video.confidence || \"\"\n    }\n  };\n});\n\nresults.sort((a, b) => b.json.overall_score - a.json.overall_score);\n\nreturn results.map((item, index) => ({\n  json: { rank: index + 1, ...item.json }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        -944
+      ],
+      "id": "ba3c8a3a-2255-4039-b1b5-0ef9ad3e5b0d",
+      "name": "Combine & Parse Analysis"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst items = $input.all();\n\nreturn items.map(item => {\n  const data = item.json;\n\n  const text = data.content?.parts\n    ?.map(part => part.text || \"\")\n    .join(\"\\n\") || \"\";\n\n  return {\n    json: {\n      text_analysis_raw: text\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        -368
+      ],
+      "id": "fe16ec40-e50c-4fcb-90b8-b0289bf02168",
+      "name": "Prepare Text Analysis"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst items = $input.all();\n\nreturn items.map(item => {\n  const data = item.json;\n\n  const text = data.content?.parts\n    ?.map(part => part.text || \"\")\n    .join(\"\\n\") || \"\";\n\n  return {\n    json: {\n      video_analysis_raw: text\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        -944
+      ],
+      "id": "fdfc9b7f-77bf-4325-a407-2982a71577e3",
+      "name": "Prepare Video Analysis"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Extract Ads Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Combine & Parse Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Report Data": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "index.html",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "index.html": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Analyze video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze video": {
+      "main": [
+        [
+          {
+            "node": "Combine & Parse Analysis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Video Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Ads Data": {
+      "main": [
+        [
+          {
+            "node": "Gemini Text Analysis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Text Analysis": {
+      "main": [
+        [
+          {
+            "node": "Prepare Text Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine & Parse Analysis": {
+      "main": [
+        [
+          {
+            "node": "Generate Report Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Text Analysis": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Video Analysis": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d219dcdb-c6e7-473f-90a7-081ba69da13b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "21a4f41c95a80845569d93d6a38c5904804e93e6c5af3210d1381c48cf66b185"
+  },
+  "nodeGroups": [],
+  "id": "OQsWe4C5IYZBFgjp",
+  "tags": []
+}
